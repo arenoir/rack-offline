@@ -25,20 +25,18 @@ module Rails
 
     def cache_block(root)
       Proc.new do
-        if Rails.version >= "3.1" && Rails.configuration.assets.enabled
-          files = Dir[
-            "#{root}/**/*.html",
-            "#{root}/assets/**/*.{js,css,jpg,png,gif}"]
-        else
-          files = Dir[
-            "#{root}/**/*.html",
-            "#{root}/stylesheets/**/*.css",
-            "#{root}/javascripts/**/*.js",
-            "#{root}/images/**/*.*"]
-        end
         
-        files.each do |file|
-          cache Pathname.new(file).relative_path_from(root)
+        manifest_path = File.join(
+          [Rails.public_path, Rails.configuration.assets.manifest, 'manifest.yml'].compact
+        )
+
+        assets_root = [
+          Rails.configuration.action_controller.asset_host, 
+          Rails.configuration.assets.prefix
+        ].join('')
+        
+        YAML.load_file(manifest_path).values.each do |file|
+          cache [assets_root, file].join('/')
         end
 
         network "*"
